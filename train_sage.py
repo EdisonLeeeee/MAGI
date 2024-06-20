@@ -1,13 +1,13 @@
 import csv
 import time
 import argparse
-from utils import *
 import torch.nn.functional as F
-from model import Model, Encoder
 from torch_geometric.datasets import Reddit
 from neighbor_sampler import NeighborSampler
 from ogb.nodeproppred import PygNodePropPredDataset
 from torch_geometric.utils import to_undirected, add_remaining_self_loops
+from magi.model import Model, Encoder
+from magi.utils import *
 
 
 parser = argparse.ArgumentParser()
@@ -15,9 +15,12 @@ parser.add_argument('--verbose', type=bool, default=True)
 parser.add_argument('--log', type=bool, default=False)
 parser.add_argument('--log_file', type=str, default='./log/')
 parser.add_argument('--times', type=int, default=1)
-parser.add_argument('--max_duration', type=int, default=60, help='max duration time')
-parser.add_argument('--kmeans_device', type=str, default='cpu', help='kmeans device, cuda or cpu')
-parser.add_argument('--kmeans_batch', type=int, default=-1, help='batch size of kmeans on GPU, -1 means full batch')
+parser.add_argument('--max_duration', type=int,
+                    default=60, help='max duration time')
+parser.add_argument('--kmeans_device', type=str,
+                    default='cpu', help='kmeans device, cuda or cpu')
+parser.add_argument('--kmeans_batch', type=int, default=-1,
+                    help='batch size of kmeans on GPU, -1 means full batch')
 parser.add_argument('--batchsize', type=int, default=2048, help='')
 
 # dataset para
@@ -70,7 +73,8 @@ def train(log=None):
     print(f"Loading {args.dataset} is over, num_nodes: {N: d}, num_edges: {E: d}, "
           f"num_feats: {num_features: d}, time costs: {time.time()-ts: .2f}")
 
-    adj = SparseTensor(row=edge_index[0], col=edge_index[1], sparse_sizes=(N, N))
+    adj = SparseTensor(row=edge_index[0],
+                       col=edge_index[1], sparse_sizes=(N, N))
     adj.fill_value_(1.)
 
     hidden = list(map(int, args.hidden_channels.split(',')))
@@ -101,11 +105,15 @@ def train(log=None):
                                   drop_last=False,
                                   num_workers=6)
 
-    encoder = Encoder(num_features, hidden_channels=hidden, dropout=args.dropout, ns=args.ns).to(device)
-    model = Model(encoder, in_channels=hidden[-1], project_hidden=projection, tau=args.tau).to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.wd)
+    encoder = Encoder(num_features, hidden_channels=hidden,
+                      dropout=args.dropout, ns=args.ns).to(device)
+    model = Model(
+        encoder, in_channels=hidden[-1], project_hidden=projection, tau=args.tau).to(device)
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=args.lr, weight_decay=args.wd)
 
-    dataset2n_clusters = {'ogbn-arxiv': 40, 'Reddit': 41, 'ogbn-products': 47, 'ogbn-papers100M': 172}
+    dataset2n_clusters = {'ogbn-arxiv': 40, 'Reddit': 41,
+                          'ogbn-products': 47, 'ogbn-papers100M': 172}
     n_clusters = dataset2n_clusters[args.dataset]
 
     x = x.to(device)
@@ -143,7 +151,8 @@ def train(log=None):
 
             train_time_cost = time.time() - ts_train
             if train_time_cost // 60 >= args.max_duration:
-                print("*********************** Maximum training time is exceeded ***********************")
+                print(
+                    "*********************** Maximum training time is exceeded ***********************")
                 stop_pos = True
                 break
         if stop_pos:
@@ -151,7 +160,8 @@ def train(log=None):
 
     print(f'Finish training, training time cost: {time.time() - ts_train:.2f}')
     if log:
-        print(f'Finish training, training time cost: {time.time() - ts_train:.2f}', file=log, flush=True)
+        print(
+            f'Finish training, training time cost: {time.time() - ts_train:.2f}', file=log, flush=True)
 
     with torch.no_grad():
         model.eval()
@@ -168,7 +178,7 @@ def train(log=None):
     ts_clustering = time.time()
     print(f'Start clustering, num_clusters: {n_clusters: d}')
     acc, nmi, ari, f1_macro, f1_micro = clustering(z, n_clusters, y.numpy(), kmeans_device=args.kmeans_device,
-                                batch_size=args.kmeans_batch, tol=1e-4, device=device, spectral_clustering=False)
+                                                   batch_size=args.kmeans_batch, tol=1e-4, device=device, spectral_clustering=False)
 
     print(f'Finish clustering, acc: {acc:.4f}, nmi: {nmi:.4f}, ari: {ari:.4f}, f1_macro: {f1_macro:.4f}, '
           f'f1_micro: {f1_micro:.4f}, clustering time cost: {time.time() - ts_clustering:.2f}')
@@ -182,16 +192,19 @@ def run(times=1, log=None, result=None):
     if result:
         with open(result, 'w', encoding='utf-8-sig', newline='') as f_w:
             writer = csv.writer(f_w)
-            writer.writerow(['times', 'acc', 'nmi', 'ari', 'f1_macro', 'f1_micro'])
+            writer.writerow(
+                ['times', 'acc', 'nmi', 'ari', 'f1_macro', 'f1_micro'])
 
     ACC, NMI, ARI, F1_MA, F1_MI = [], [], [], [], []
     for i in range(times):
         if log:
-            print(f'\n----------------------times {i+1: d} start', file=log, flush=True)
+            print(
+                f'\n----------------------times {i+1: d} start', file=log, flush=True)
         print(f'\n----------------------times {i+1: d} start')
         acc, nmi, adjscore, f1_macro, f1_micro = train(log)
         if log:
-            print(f'\n----------------------times {i + 1: d} over', file=log, flush=True)
+            print(
+                f'\n----------------------times {i + 1: d} over', file=log, flush=True)
         print(f'\n----------------------times {i + 1: d} over')
         if result:
             with open(result, 'a', encoding='utf-8-sig', newline='') as f_w:
@@ -212,8 +225,10 @@ def run(times=1, log=None, result=None):
     if result:
         with open(result, 'a', encoding='utf-8-sig', newline='') as f_w:
             writer = csv.writer(f_w)
-            writer.writerow(['mean', ACC.mean(), NMI.mean(), ARI.mean(), F1_MA.mean(), F1_MI.mean()])
-            writer.writerow(['std', ACC.std(), NMI.std(), ARI.std(), F1_MA.std(), F1_MI.std()])
+            writer.writerow(['mean', ACC.mean(), NMI.mean(),
+                            ARI.mean(), F1_MA.mean(), F1_MI.mean()])
+            writer.writerow(['std', ACC.std(), NMI.std(),
+                            ARI.std(), F1_MA.std(), F1_MI.std()])
 
 
 if __name__ == '__main__':
@@ -221,7 +236,11 @@ if __name__ == '__main__':
     result = None
     randint = random.randint(1, 100000000)
     if args.log:
-        log = args.log_file + 'Log-' + time.strftime('%Y-%m-%d-%H-%s', time.localtime(time.time())) + '-' + str(randint) + '.txt'
-        result = args.log_file + 'Log-' + time.strftime('%Y-%m-%d-%H-%s', time.localtime(time.time())) + '-' + str(randint) + '.csv'
+        log = args.log_file + 'Log-' + \
+            time.strftime('%Y-%m-%d-%H-%s', time.localtime(time.time())
+                          ) + '-' + str(randint) + '.txt'
+        result = args.log_file + 'Log-' + \
+            time.strftime('%Y-%m-%d-%H-%s', time.localtime(time.time())
+                          ) + '-' + str(randint) + '.csv'
         log = open(log, "w+")
     run(args.times, log, result)
