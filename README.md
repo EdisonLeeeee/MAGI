@@ -1,5 +1,5 @@
 <div align="center">
-<h1> 🎩 MAGI (CoMmunity-Aware Graph clusterIng)</h1>
+<h1> 🎩 MAGI (coMmunity-Aware Graph clusterIng)</h1>
 <h3>Revisiting Modularity Maximization for Graph Clustering: A Contrastive Learning Perspective</h3>
 
 
