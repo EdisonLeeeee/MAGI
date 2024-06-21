@@ -1,12 +1,21 @@
-# CoMmunity-Aware Graph clusterIng (MAGI) Framework
-The official PyTorch implementation of "Revisiting Modularity Maximization for Graph Clustering: A Contrastive Learning Perspective"
+<div align="center">
+<h1> 🎩 MAGI (CoMmunity-Aware Graph clusterIng)</h1>
+<h3>Revisiting Modularity Maximization for Graph Clustering: A Contrastive Learning Perspective</h3>
 
-### TL; DL
+
+arXiv ([arXiv:2406.142886](https://arxiv.org/abs/2406.142886)),
+
+</div>
+
+<div align="center">
+  <img width="400" src="imgs/example.png"/>
+</div>
+
+#### TL; DR
 * **(Modularity maximization == contrastive learning)** We establish the connection between *modularity maximization* and *graph contrastive learning*
 * **(MAGI framework)** We propose MAGI, a community-aware graph contrastive learning framework that uses modularity maximization as its pretext task
 * **(Performance and scalibility)** MAGI has achieved state-of-the-art performance in graph clustering and demonstrates excellent scalability on industrial-scale graphs
 
-![example](imgs/example.png)
 
 
 
