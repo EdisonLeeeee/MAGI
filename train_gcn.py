@@ -1,5 +1,4 @@
 import csv
-import time
 import argparse
 
 import torch.nn.functional as F
@@ -12,9 +11,7 @@ from magi.model import Model, Encoder
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--verbose', type=bool, default=True, help='')
-parser.add_argument('--log', type=bool, default=False, help='')
-parser.add_argument('--log_file', type=str, default='./log/')
-parser.add_argument('--times', type=int, default=1, help='run times')
+parser.add_argument('--runs', type=int, default=1, help='runs')
 
 # dataset para
 parser.add_argument('--dataset', type=str, default='Cora')
@@ -38,23 +35,20 @@ parser.add_argument('--ns', type=float, default=0.5, help='')
 args = parser.parse_args()
 
 
-def train(log=None):
+def train():
     randint = random.randint(1, 1000000)
     setup_seed(randint)
-    if log is not None:
-        print('random seed : ', randint, '\n', args, file=log, flush=True)
     if args.verbose:
         print('random seed : ', randint, '\n', args)
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
+    path = 'data/'
     if args.dataset in ['Cora', 'Citeseer']:
-        path = './data/'
         dataset = Planetoid(path, args.dataset)
     elif args.dataset in ['Photo', 'Computers']:
-        path = './data/'
         dataset = Amazon(path, args.dataset)
     else:
-        exit("dataset error!")
+        raise RuntimeError(f"Unknown dataset {args.dataset}")
 
     data = dataset[0]
     x, edge_index, y = data.x, data.edge_index, data.y
@@ -96,9 +90,6 @@ def train(log=None):
         loss = model.loss(out, mask)
         loss.backward()
         optimizer.step()
-        if log:
-            print(
-                f'(T) | Epoch={epoch:03d}, loss={float(loss):.4f}', file=log, flush=True)
         if args.verbose:
             print(f'(T) | Epoch={epoch:03d}, loss={float(loss):.4f}')
 
@@ -111,36 +102,27 @@ def train(log=None):
         acc, nmi, ari, f1_macro, f1_micro = clustering(
             out.numpy(), n_clusters, y.numpy(), spectral_clustering=True)
 
-    if log:
-        print(
-            f'train over | ACC={acc:.4f}, NMI={nmi:.4f},  ARI={ari:.4f}, f1_macro={f1_macro:.4f}, f1_micro={f1_micro:.4f}', file=log, flush=True)
     print(
         f'train over | ACC={acc:.4f}, NMI={nmi:.4f},  ARI={ari:.4f}, f1_macro={f1_macro:.4f}, f1_micro={f1_micro:.4f}')
 
     return acc, nmi, ari, f1_macro, f1_micro
 
 
-def run(times=1, log=None, result=None):
+def run(runs=1, result=None):
     if result:
         with open(result, 'w', encoding='utf-8-sig', newline='') as f_w:
             writer = csv.writer(f_w)
             writer.writerow(
-                ['times', 'acc', 'nmi', 'ari', 'f1_macro', 'f1_micro'])
+                ['runs', 'acc', 'nmi', 'ari', 'f1_macro', 'f1_micro'])
 
     ACC, NMI, ARI, F1_MA, F1_MI = [], [], [], [], []
-    for i in range(times):
-        if log:
-            print(
-                f'\n----------------------times {i+1: d} start', file=log, flush=True)
-        print(f'\n----------------------times {i+1: d} start')
-        acc, nmi, ari, f1_macro, f1_micro = train(log)
-        if log:
-            print(
-                f'\n----------------------times {i+1: d} over', file=log, flush=True)
-        print(f'\n----------------------times {i+1: d} over')
+    for i in range(runs):
+        print(f'\n----------------------runs {i+1: d} start')
+        acc, nmi, ari, f1_macro, f1_micro = train()
+        print(f'\n----------------------runs {i+1: d} over')
 
         if result:
-            with open(result, 'a', encoding='utf-8-sig', newline='') as f_w:
+            with open(result, 'a', encoding='utf-8', newline='') as f_w:
                 writer = csv.writer(f_w)
                 writer.writerow([i+1, acc, nmi, ari, f1_macro, f1_micro])
         ACC.append(acc)
@@ -153,11 +135,6 @@ def run(times=1, log=None, result=None):
     ARI = np.array(ARI)
     F1_MA = np.array(F1_MA)
     F1_MI = np.array(F1_MI)
-    if log:
-        print(f'mean | ACC={ACC.mean():.4f}, NMI={NMI.mean():.4f},  ARI={ARI.mean():.4f}, '
-              f'f1_macro={F1_MA.mean():.4f}, f1_micro={F1_MI.mean():.4f}', file=log, flush=True)
-        print(f'std | ACC={ACC.std():.4f}, NMI={NMI.std():.4f},  ARI={ARI.std():.4f}, '
-              f'f1_macro={F1_MA.std():.4f}, f1_micro={F1_MI.std():.4f}', file=log, flush=True)
 
     print(f'mean | ACC={ACC.mean():.4f}, NMI={NMI.mean():.4f},  ARI={ARI.mean():.4f}, '
           f'f1_macro={F1_MA.mean():.4f}, f1_micro={F1_MI.mean():.4f}')
@@ -174,15 +151,5 @@ def run(times=1, log=None, result=None):
 
 
 if __name__ == '__main__':
-    log = None
     result = None
-    randint = random.randint(1, 100000000)
-    if args.log:
-        log = args.log_file + 'log-' + \
-            time.strftime('%Y-%m-%d-%H-%s', time.localtime(time.time())
-                          ) + '-' + str(randint) + '.txt'
-        result = args.log_file + 'res-' + \
-            time.strftime('%Y-%m-%d-%H-%s', time.localtime(time.time())
-                          ) + '-' + str(randint) + '.csv'
-        log = open(log, "w+")
-    run(args.times, log, result)
+    run(args.runs, result)
