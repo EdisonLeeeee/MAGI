@@ -1,12 +1,16 @@
 import csv
+import random
 import argparse
+import numpy as np
 
+import torch
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv
 from torch_sparse import SparseTensor
 from torch_geometric.datasets import Planetoid, Amazon
 from torch_geometric.utils import to_undirected, add_remaining_self_loops
-from magi.utils import *
+
+from magi.utils import setup_seed, get_sim, get_mask, scale, clustering
 from magi.model import Model, Encoder
 
 parser = argparse.ArgumentParser()

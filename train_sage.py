@@ -1,13 +1,19 @@
 import csv
+import random
 import time
 import argparse
+import numpy as np
+from tqdm import tqdm
+
+import torch
 import torch.nn.functional as F
 from torch_geometric.datasets import Reddit
-from ogb.nodeproppred import PygNodePropPredDataset
 from torch_geometric.utils import to_undirected, add_remaining_self_loops
+from torch_sparse import SparseTensor
+
 from magi.model import Model, Encoder
 from magi.neighbor_sampler import NeighborSampler
-from magi.utils import *
+from magi.utils import setup_seed, get_mask, clustering
 
 
 parser = argparse.ArgumentParser()
@@ -54,6 +60,7 @@ def train():
 
     if args.dataset in ['ogbn-arxiv', 'ogbn-products', 'ogbn-papers100M']:
         path = './data/OGB/'
+        from ogb.nodeproppred import PygNodePropPredDataset
         dataset = PygNodePropPredDataset(root=path, name=args.dataset)
         x, edge_index, y = dataset[0].x, dataset[0].edge_index, dataset[0].y
         y = y[:, 0]
@@ -62,7 +69,8 @@ def train():
         dataset = Reddit(root=path)
         x, edge_index, y = dataset[0].x, dataset[0].edge_index, dataset[0].y
     else:
-        exit("dataset error!")
+        raise RuntimeError(f"Unknown dataset {args.dataset}")
+
     edge_index = to_undirected(add_remaining_self_loops(edge_index)[0])
 
     N, E, num_features = x.shape[0], edge_index.shape[-1], x.shape[-1]
