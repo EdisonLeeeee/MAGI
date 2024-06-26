@@ -69,5 +69,15 @@ pip install -r requirements.txt
   python train_sage.py --runs 10 --dataset 'ogbn-products' --batchsize 2048 --max_duration 60 --kmeans_device 'cuda' --kmeans_batch 300000 --hidden '1024,1024,256' --size '10,10,10' --wt 20 --wl 4 --tau 0.9 --ns 0.1 --lr 0.01 --epochs 400 --wd 0 --dropout 0
   ```
 
+# Citation
+Please kindly cite our paper if you find our project is useful:
 
-
+```bib
+@inproceedings{magi,
+  title  = {Revisiting Modularity Maximization for Graph Clustering: A Contrastive Learning Perspective},
+  author = {Yunfei Liu and Jintang Li and Yuehe Chen and Ruofan Wu and Baokun Wang and Jing Zhou and Sheng Tian and Shuheng Shen and Xing Fu and Changhua Meng and Weiqiang Wang and Liang Chen},
+  booktitle    = {{KDD}},
+  publisher    = {{ACM}},
+  year   = {2024},
+}
+```
